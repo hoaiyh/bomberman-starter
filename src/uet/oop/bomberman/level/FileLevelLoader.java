@@ -37,18 +37,7 @@ public class FileLevelLoader extends LevelLoader {
 	public void loadLevel(int level)  {
 		// TODO: đọc dữ liệu từ tệp cấu hình /levels/Level{level}.txt
 		// TODO: cập nhật các giá trị đọc được vào _width, _height, _level, _map
-//		String path = "";
-//		switch(level){
-//			case 1:
-//				path = "level1.txt";
-//				break;
-//			case 2:
-//				path ="leve2.txt";
-//				break;
-//			case 3:
-//				path="level3.txt";
-//				break;
-//		}
+
 		try{
 			InputStream is = new FileInputStream("res/levels/level" + level + ".txt");
 			BufferedReader br = new BufferedReader(new InputStreamReader(is));
@@ -61,9 +50,8 @@ public class FileLevelLoader extends LevelLoader {
 			for(int i=0;i<_height;i++)
 			{
 				String data = br.readLine();
-				char [] line = data.toCharArray();
 				for(int j = 0;j<_width;j++){
-					_map[i][j] = line[j];
+					_map[i][j] = data.charAt(j);
 				}
 			}
 
@@ -83,7 +71,7 @@ public class FileLevelLoader extends LevelLoader {
 		// thêm Wall
 		for (int x = 0; x < _width; x++) {
 			for (int y = 0; y < _height; y++) {
-				int pos = x + y * _width;
+				int pos =x+y*_width;
 				char b = _map[y][x];
 				switch(b){
 					//them wall
@@ -118,7 +106,7 @@ public class FileLevelLoader extends LevelLoader {
 					case 'x':
 						//Portal
 
-						_board.addEntity(pos,new LayeredEntity(x,y,new Grass(x,y,Sprite.grass),new Portal(x,y,Sprite.portal),new Brick(x,y,Sprite.brick)));
+						_board.addEntity(pos,new LayeredEntity(x,y,new Grass(x,y,Sprite.grass),new Portal(x,y,Sprite.portal,_board),new Brick(x,y,Sprite.brick)));
 						break;
 					case 'b':
 						//Bomb Item
