@@ -22,13 +22,13 @@ public class Game extends Canvas {
 	
 	public static final String TITLE = "BombermanGame";
 	
-	private static final int BOMBRATE = 1;
+	private static final int BOMBRATE = 2;
 	private static final int BOMBRADIUS = 1;
 	private static final double BOMBERSPEED = 1.0;
 	
 	public static final int TIME = 200;
 	public static final int POINTS = 0;
-	
+	public static final int Lives = 3;
 	protected static int SCREENDELAY = 3;
 
 	protected static int bombRate = BOMBRATE;
@@ -143,6 +143,7 @@ public class Game extends Canvas {
 			if(System.currentTimeMillis() - timer > 1000) {
 				_frame.setTime(_board.subtractTime());
 				_frame.setPoints(_board.getPoints());
+				_frame.setLives(_board.getLives());
 				timer += 1000;
 				_frame.setTitle(TITLE + " | " + updates + " rate, " + frames + " fps");
 				updates = 0;

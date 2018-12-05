@@ -33,7 +33,7 @@ public class Board implements IRender {
 	private List<Message> _messages = new ArrayList<>();
 	
 	private int _screenToShow = -1; //1:endgame, 2:changelevel, 3:paused
-	
+	private int _lives = Game.Lives;
 	private int _time = Game.TIME;
 	private int _points = Game.POINTS;
 	
@@ -44,7 +44,7 @@ public class Board implements IRender {
 		
 		loadLevel(1); //start in level 1
 	}
-	
+
 	@Override
 	public void update() {
 		if( _game.isPaused() ) return;
@@ -85,6 +85,9 @@ public class Board implements IRender {
 	public void nextLevel() {
 		loadLevel(_levelLoader.getLevel() + 1);
 	}
+	public void restartLevel(){
+		loadLevel(_levelLoader.getLevel());
+	}
 	
 	public void loadLevel(int level) {
 		_time = Game.TIME;
@@ -111,11 +114,21 @@ public class Board implements IRender {
 	}
 	
 	public void endGame() {
-		_screenToShow = 1;
-		_game.resetScreenDelay();
-		_game.pause();
+			_screenToShow = 1;
+			_game.resetScreenDelay();
+			_game.pause();
 	}
-	
+	public void next()
+	{
+		if(_levelLoader.getLevel()==2)
+		{
+			if(detectNoEnemies())
+				endGame();
+		}
+		else if(detectNoEnemies())
+			nextLevel();
+	}
+
 	public boolean detectNoEnemies() {
 		int total = 0;
 		for (int i = 0; i < _characters.size(); i++) {
@@ -350,6 +363,11 @@ public class Board implements IRender {
 	public int getPoints() {
 		return _points;
 	}
+	public void addLives(int lives)
+	{
+		this._lives+=lives;
+	}
+	public int getLives(){ return _lives;}
 
 	public void addPoints(int points) {
 		this._points += points;
@@ -362,5 +380,6 @@ public class Board implements IRender {
 	public int getHeight() {
 		return _levelLoader.getHeight();
 	}
+
 	
 }

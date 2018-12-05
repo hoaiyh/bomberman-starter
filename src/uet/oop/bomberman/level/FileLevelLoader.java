@@ -72,8 +72,7 @@ public class FileLevelLoader extends LevelLoader {
 		for (int x = 0; x < _width; x++) {
 			for (int y = 0; y < _height; y++) {
 				int pos =x+y*_width;
-				char b = _map[y][x];
-				switch(b){
+				switch(_map[y][x]){
 					//them wall
 					case '#':
 						_board.addEntity(pos,new Wall(x,y,Sprite.wall));

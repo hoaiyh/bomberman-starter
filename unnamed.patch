@@ -1,0 +1,860 @@
+Index: src/uet/oop/bomberman/level/FileLevelLoader.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/level/FileLevelLoader.java	(revision 021db64a0c9d1d81757de589284f01d422885aec)
++++ src/uet/oop/bomberman/level/FileLevelLoader.java	(revision 0bfc733e75bdf4b6db22a4427af02922e752b176)
+@@ -5,13 +5,22 @@
+ import uet.oop.bomberman.entities.LayeredEntity;
+ import uet.oop.bomberman.entities.character.Bomber;
+ import uet.oop.bomberman.entities.character.enemy.Balloon;
++import uet.oop.bomberman.entities.character.enemy.Oneal;
+ import uet.oop.bomberman.entities.tile.Grass;
++import uet.oop.bomberman.entities.tile.Portal;
++import uet.oop.bomberman.entities.tile.Wall;
+ import uet.oop.bomberman.entities.tile.destroyable.Brick;
++import uet.oop.bomberman.entities.tile.item.BombItem;
++import uet.oop.bomberman.entities.tile.item.FlameItem;
+ import uet.oop.bomberman.entities.tile.item.SpeedItem;
+ import uet.oop.bomberman.exceptions.LoadLevelException;
+ import uet.oop.bomberman.graphics.Screen;
+ import uet.oop.bomberman.graphics.Sprite;
+ 
++import java.io.*;
++import java.net.URL;
++import java.util.StringTokenizer;
++
+ public class FileLevelLoader extends LevelLoader {
+ 
+ 	/**
+@@ -19,15 +28,37 @@
+ 	 * từ ma trận bản đồ trong tệp cấu hình
+ 	 */
+ 	private static char[][] _map;
+-	
++
+ 	public FileLevelLoader(Board board, int level) throws LoadLevelException {
+ 		super(board, level);
+ 	}
+-	
++
+ 	@Override
+-	public void loadLevel(int level) {
++	public void loadLevel(int level)  {
+ 		// TODO: đọc dữ liệu từ tệp cấu hình /levels/Level{level}.txt
+ 		// TODO: cập nhật các giá trị đọc được vào _width, _height, _level, _map
++
++		try{
++			InputStream is = new FileInputStream("res/levels/level" + level + ".txt");
++			BufferedReader br = new BufferedReader(new InputStreamReader(is));
++			String s = br.readLine();
++			StringTokenizer st =new StringTokenizer(s);
++			_level = Integer.valueOf(st.nextToken());
++			_height = Integer.valueOf(st.nextToken());
++			_width = Integer.valueOf(st.nextToken());
++			_map = new char[_height][_width];
++			for(int i=0;i<_height;i++)
++			{
++				String data = br.readLine();
++				for(int j = 0;j<_width;j++){
++					_map[i][j] = data.charAt(j);
++				}
++			}
++
++		}catch(IOException e) {
++			System.out.println("ERROR!");
++		}
++
+ 	}
+ 
+ 	@Override
+@@ -38,43 +69,102 @@
+ 		// TODO: phần code mẫu ở dưới để hướng dẫn cách thêm các loại Entity vào game
+ 		// TODO: hãy xóa nó khi hoàn thành chức năng load màn chơi từ tệp cấu hình
+ 		// thêm Wall
+-		for (int x = 0; x < 20; x++) {
+-			for (int y = 0; y < 20; y++) {
+-				int pos = x + y * _width;
+-				Sprite sprite = y == 0 || x == 0 || x == 10 || y == 10 ? Sprite.wall : Sprite.grass;
+-				_board.addEntity(pos, new Grass(x, y, sprite));
+-			}
+-		}
+-
+-		// thêm Bomber
+-		int xBomber = 1, yBomber = 1;
+-		_board.addCharacter( new Bomber(Coordinates.tileToPixel(xBomber), Coordinates.tileToPixel(yBomber) + Game.TILES_SIZE, _board) );
+-		Screen.setOffset(0, 0);
+-		_board.addEntity(xBomber + yBomber * _width, new Grass(xBomber, yBomber, Sprite.grass));
++		for (int x = 0; x < _width; x++) {
++			for (int y = 0; y < _height; y++) {
++				int pos =x+y*_width;
++				char b = _map[y][x];
++				switch(b){
++					//them wall
++					case '#':
++						_board.addEntity(pos,new Wall(x,y,Sprite.wall));
++						break;
++					//them Bomber
++					case 'p':
++//
++						_board.addCharacter(new Bomber(Coordinates.tileToPixel(x),Coordinates.tileToPixel(y)+Game.TILES_SIZE,_board));
++						Screen.setOffset(0,0);
++						_board.addEntity(pos,new Grass(x,y,Sprite.grass));
++						break;
++					//them Enemy Ballon
++					case '1':
++//
++						_board.addCharacter(new Balloon(Coordinates.tileToPixel(x),Coordinates.tileToPixel(y)+Game.TILES_SIZE,_board));
++						_board.addEntity(pos,new Grass(x,y,Sprite.grass));
++						break;
++					//them Enemy Oneal
++					case '2':
+ 
+-		// thêm Enemy
+-		int xE = 2, yE = 1;
+-		_board.addCharacter( new Balloon(Coordinates.tileToPixel(xE), Coordinates.tileToPixel(yE) + Game.TILES_SIZE, _board));
+-		_board.addEntity(xE + yE * _width, new Grass(xE, yE, Sprite.grass));
++						_board.addCharacter(new Oneal(Coordinates.tileToPixel(x),Coordinates.tileToPixel(y)+Game.TILES_SIZE,_board));
++						_board.addEntity(pos,new Grass(x,y,Sprite.grass));
++						break;
++					//them Brick
++					case '*':
+ 
+-		// thêm Brick
+-		int xB = 3, yB = 1;
+-		_board.addEntity(xB + yB * _width,
+-				new LayeredEntity(xB, yB,
+-					new Grass(xB, yB, Sprite.grass),
+-					new Brick(xB, yB, Sprite.brick)
+-				)
+-		);
+-
+-		// thêm Item kèm Brick che phủ ở trên
+-		int xI = 1, yI = 2;
+-		_board.addEntity(xI + yI * _width,
+-				new LayeredEntity(xI, yI,
+-					new Grass(xI ,yI, Sprite.grass),
+-					new SpeedItem(xI, yI, Sprite.powerup_flames),
+-					new Brick(xI, yI, Sprite.brick)
+-				)
+-		);
++						_board.addEntity(pos,new LayeredEntity(x,y,new Grass(x,y,Sprite.grass),new Brick(x,y,Sprite.brick)));
++						break;
++					// thêm Item kèm Brick che phủ ở trên
++					case 'x':
++						//Portal
++
++						_board.addEntity(pos,new LayeredEntity(x,y,new Grass(x,y,Sprite.grass),new Portal(x,y,Sprite.portal,_board),new Brick(x,y,Sprite.brick)));
++						break;
++					case 'b':
++						//Bomb Item
++
++						_board.addEntity(pos,new LayeredEntity(x,y,new Grass(x,y,Sprite.grass),new BombItem(x,y,Sprite.powerup_bombs),new Brick(x,y,Sprite.brick)));
++						break;
++					//them Flame Item
++					case 'f':
++
++						_board.addEntity(pos,new LayeredEntity(x,y,new Grass(x,y,Sprite.grass),new FlameItem(x,y,Sprite.powerup_flames),new Brick(x,y,Sprite.brick)));
++						break;
++					//them Speed Item
++					case 's':
++
++						_board.addEntity(pos,new LayeredEntity(x,y,new Grass (x,y,Sprite.grass),new SpeedItem(x,y,Sprite.powerup_speed),new Brick(x,y,Sprite.brick)));
++						break;
++					default:
++
++						_board.addEntity(pos,new Grass(x,y,Sprite.grass));
++						break;
++
++
++				}
++
++
++			}
++
++		}
++
++//		// thêm Bomber
++//		int xBomber = 1, yBomber = 1;
++//		_board.addCharacter( new Bomber(Coordinates.tileToPixel(xBomber), Coordinates.tileToPixel(yBomber) + Game.TILES_SIZE, _board) );
++//		Screen.setOffset(0, 0);
++//		_board.addEntity(xBomber + yBomber * _width, new Grass(xBomber, yBomber, Sprite.grass));
++//
++//		// thêm Enemy
++//		int xE = 2, yE = 1;
++//		_board.addCharacter( new Balloon(Coordinates.tileToPixel(xE), Coordinates.tileToPixel(yE) + Game.TILES_SIZE, _board));
++//		_board.addEntity(xE + yE * _width, new Grass(xE, yE, Sprite.grass));
++//
++//		// thêm Brick
++//		int xB = 3, yB = 1;
++//		_board.addEntity(xB + yB * _width,
++//				new LayeredEntity(xB, yB,
++//					new Grass(xB, yB, Sprite.grass),
++//					new Brick(xB, yB, Sprite.brick)
++//				)
++//		);
++//
++//		// thêm Item kèm Brick che phủ ở trên
++//		int xI = 1, yI = 2;
++//		_board.addEntity(xI + yI * _width,
++//				new LayeredEntity(xI, yI,
++//					new Grass(xI ,yI, Sprite.grass),
++//					new SpeedItem(xI, yI, Sprite.powerup_flames),
++//					new Brick(xI, yI, Sprite.brick)
++//				)
++//		);
+ 	}
+ 
+ }
+Index: res/levels/Level1.txt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- res/levels/Level1.txt	(date 1542130377000)
++++ res/levels/Level1.txt	(date 1543509039000)
+@@ -1,11 +1,11 @@
+ 1 13 31
+ ###############################
+-#p     ** *  1 * 2 *  * * *   #
++#p     **b*  1 * 2 *  * * *  s#
+ # # # #*# # #*#*# # # #*#*#*# #
+ #  x*     ***  *  1   * 2 * * #
+ # # # # # #*# # #*#*# # # # #*#
+ #f         x **  *  *   1     #
+-# # # # # # # # # #*# #*# # # #
++# # # # # #b# # # #*# #*# # # #
+ #*  *      *  *      *        #
+ # # # # #*# # # #*#*# # # # # #
+ #*    **  *       *           #
+Index: src/uet/oop/bomberman/Board.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/Board.java	(date 1542130377000)
++++ src/uet/oop/bomberman/Board.java	(date 1543509039000)
+@@ -173,7 +173,18 @@
+ 		
+ 		return null;
+ 	}
+-
++	public Character getCharacterAt(double x,double y)
++	{
++		Iterator<Character> i = _characters.iterator();
++		Character cur;
++		while(i.hasNext())
++		{
++			cur = i.next();
++			if(cur.getYTile()==y&&cur.getXTile() == x)
++				return cur;
++		}
++		return null;
++	}
+ 	public Bomber getBomber() {
+ 		Iterator<Character> itr = _characters.iterator();
+ 		
+Index: src/uet/oop/bomberman/Game.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/Game.java	(date 1542130377000)
++++ src/uet/oop/bomberman/Game.java	(date 1543509039000)
+@@ -16,8 +16,7 @@
+ public class Game extends Canvas {
+ 
+ 	public static final int TILES_SIZE = 16,
+-							WIDTH = TILES_SIZE * (31 / 2),
+-							HEIGHT = 13 * TILES_SIZE;
++							WIDTH = TILES_SIZE * (31 / 2), HEIGHT = 13 * TILES_SIZE;
+ 
+ 	public static int SCALE = 3;
+ 	
+Index: src/uet/oop/bomberman/entities/LayeredEntity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/LayeredEntity.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/LayeredEntity.java	(date 1543509039000)
+@@ -58,7 +58,6 @@
+ 	@Override
+ 	public boolean collide(Entity e) {
+ 		// TODO: lấy entity trên cùng ra để xử lý va chạm
+-		return false;
++		return getTopEntity().collide(e);
+ 	}
+-
+ }
+Index: src/uet/oop/bomberman/entities/bomb/Bomb.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/bomb/Bomb.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/bomb/Bomb.java	(date 1543509039000)
+@@ -1,10 +1,13 @@
+ package uet.oop.bomberman.entities.bomb;
+ 
+ import uet.oop.bomberman.Board;
++import uet.oop.bomberman.Game;
++import uet.oop.bomberman.entities.character.Character;
+ import uet.oop.bomberman.entities.AnimatedEntitiy;
+ import uet.oop.bomberman.entities.Entity;
+ import uet.oop.bomberman.graphics.Screen;
+ import uet.oop.bomberman.graphics.Sprite;
++import uet.oop.bomberman.level.Coordinates;
+ 
+ public class Bomb extends AnimatedEntitiy {
+ 
+@@ -73,10 +76,17 @@
+      */
+ 	protected void explode() {
+ 		_exploded = true;
+-		
+ 		// TODO: xử lý khi Character đứng tại vị trí Bomb
+-		
++		Character character = _board.getCharacterAt(_x,_y);
++		if(character!=null)
++			character.kill();
++
++
+ 		// TODO: tạo các Flame
++		_flames = new Flame[4];
++		for(int i=0;i<_flames.length;i++){
++			_flames[i] = new Flame((int)_x,(int)_y,i, Game.getBombRadius(),_board);
++		}
+ 	}
+ 	
+ 	public FlameSegment flameAt(int x, int y) {
+@@ -95,6 +105,22 @@
+ 	public boolean collide(Entity e) {
+         // TODO: xử lý khi Bomber đi ra sau khi vừa đặt bom (_allowedToPassThru)
+         // TODO: xử lý va chạm với Flame của Bomb khác
++		if(e instanceof Character)
++		{
++			double x = e.getX() - Coordinates.tileToPixel(getX());
++			double y = e.getY() - Coordinates.tileToPixel(getY());
++			if(!(x >= -10 && x < 16 && y >= 1 && y <= 28))
++			{
++				_allowedToPassThru = false;
++			}
++			return _allowedToPassThru;
++
++		}
++		if(e instanceof Flame)
++		{
++			_timeToExplode = 0;
++			return true;
++		}
+         return false;
+ 	}
+ }
+Index: src/uet/oop/bomberman/entities/bomb/Flame.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/bomb/Flame.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/bomb/Flame.java	(date 1543509039000)
+@@ -3,6 +3,7 @@
+ import uet.oop.bomberman.Board;
+ import uet.oop.bomberman.entities.Entity;
+ import uet.oop.bomberman.graphics.Screen;
++import uet.oop.bomberman.entities.character.Character;
+ 
+ public class Flame extends Entity {
+ 
+@@ -38,13 +39,26 @@
+ 		 * tính toán độ dài Flame, tương ứng với số lượng segment
+ 		 */
+ 		_flameSegments = new FlameSegment[calculatePermitedDistance()];
+-
+ 		/**
+ 		 * biến last dùng để đánh dấu cho segment cuối cùng
+ 		 */
+-		boolean last;
+-
++		boolean last = false;
+ 		// TODO: tạo các segment dưới đây
++		int x = (int) _x;
++		int y = (int) _y;
++		for(int i = 0 ;i<_flameSegments.length;i++)
++		{
++			last = i == _flameSegments.length - 1 ? true:false;
++			switch (_direction)
++			{
++				case 0:y--;break;
++				case 1:x++;break;
++				case 2: y++;break;
++				case 3:x--;break;
++			}
++			_flameSegments[i] = new FlameSegment(x,y,_direction,last,_board);
++
++		}
+ 	}
+ 
+ 	/**
+@@ -53,9 +67,23 @@
+ 	 */
+ 	private int calculatePermitedDistance() {
+ 		// TODO: thực hiện tính toán độ dài của Flame
+-		return 1;
++		int radius = 0;
++		int x =(int) _x;
++		int y =(int) _y;
++		while (radius<_radius){
++			if(_direction==0) y--;
++			if(_direction == 1)x++;
++			if(_direction == 2)y++;
++			if(_direction==3) x--;
++			Entity e = _board.getEntity(x,y,null);
++			if(e instanceof Character)
++				radius++;
++			if(e.collide(this) == false)
++				break;
++			radius++;
++		}
++		return radius;
+ 	}
+-	
+ 	public FlameSegment flameSegmentAt(int x, int y) {
+ 		for (int i = 0; i < _flameSegments.length; i++) {
+ 			if(_flameSegments[i].getX() == x && _flameSegments[i].getY() == y)
+@@ -77,6 +105,7 @@
+ 	@Override
+ 	public boolean collide(Entity e) {
+ 		// TODO: xử lý va chạm với Bomber, Enemy. Chú ý đối tượng này có vị trí chính là vị trí của Bomb đã nổ
++
+ 		return true;
+ 	}
+ }
+Index: src/uet/oop/bomberman/entities/bomb/FlameSegment.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/bomb/FlameSegment.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/bomb/FlameSegment.java	(date 1543509039000)
+@@ -1,14 +1,16 @@
+ package uet.oop.bomberman.entities.bomb;
+ 
++import uet.oop.bomberman.Board;
+ import uet.oop.bomberman.entities.Entity;
+ import uet.oop.bomberman.graphics.Screen;
+ import uet.oop.bomberman.graphics.Sprite;
++import uet.oop.bomberman.entities.character.Character;
+ 
+ 
+ public class FlameSegment extends Entity {
+ 
+ 	protected boolean _last;
+-
++	protected Board _board;
+ 	/**
+ 	 *
+ 	 * @param x
+@@ -17,11 +19,11 @@
+ 	 * @param last cho biết segment này là cuối cùng của Flame hay không,
+ 	 *                segment cuối có sprite khác so với các segment còn lại
+ 	 */
+-	public FlameSegment(int x, int y, int direction, boolean last) {
++	public FlameSegment(int x, int y, int direction, boolean last, Board board) {
+ 		_x = x;
+ 		_y = y;
+ 		_last = last;
+-
++		_board = board;
+ 		switch (direction) {
+ 			case 0:
+ 				if(!last) {
+@@ -68,6 +70,11 @@
+ 	@Override
+ 	public boolean collide(Entity e) {
+ 		// TODO: xử lý khi FlameSegment va chạm với Character
++		if(e instanceof Character)
++		{
++			((Character)e).kill();
++		}
++
+ 		return true;
+ 	}
+ 	
+Index: src/uet/oop/bomberman/entities/character/Bomber.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/character/Bomber.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/character/Bomber.java	(date 1543509039000)
+@@ -4,9 +4,12 @@
+ import uet.oop.bomberman.Game;
+ import uet.oop.bomberman.entities.Entity;
+ import uet.oop.bomberman.entities.bomb.Bomb;
++import uet.oop.bomberman.entities.bomb.Flame;
++import uet.oop.bomberman.entities.character.enemy.Enemy;
+ import uet.oop.bomberman.graphics.Screen;
+ import uet.oop.bomberman.graphics.Sprite;
+ import uet.oop.bomberman.input.Keyboard;
++import uet.oop.bomberman.level.Coordinates;
+ 
+ import java.util.Iterator;
+ import java.util.List;
+@@ -73,10 +76,20 @@
+         // TODO: _timeBetweenPutBombs dùng để ngăn chặn Bomber đặt 2 Bomb cùng tại 1 vị trí trong 1 khoảng thời gian quá ngắn
+         // TODO: nếu 3 điều kiện trên thỏa mãn thì thực hiện đặt bom bằng placeBomb()
+         // TODO: sau khi đặt, nhớ giảm số lượng Bomb Rate và reset _timeBetweenPutBombs về 0
++        if(_input.space&&Game.getBombRate()>0&&_timeBetweenPutBombs<0)
++        {
++            int x = Coordinates.pixelToTile(_x + _sprite.getSize()/2);
++            int y = Coordinates.pixelToTile((_y+_sprite.getSize()/2)-_sprite.getSize());
++            placeBomb(x,y);
++            Game.addBombRate(-1);
++            _timeBetweenPutBombs = 30;
++        }
+     }
+ 
+     protected void placeBomb(int x, int y) {
+         // TODO: thực hiện tạo đối tượng bom, đặt vào vị trí (x, y)
++        Bomb bomb = new Bomb(x,y,_board);
++        _board.addBomb(bomb);
+     }
+ 
+     private void clearBombs() {
+@@ -110,26 +123,67 @@
+     @Override
+     protected void calculateMove() {
+         // TODO: xử lý nhận tín hiệu điều khiển hướng đi từ _input và gọi move() để thực hiện di chuyển
++        int xa =0,ya=0;
++        if(_input.down) ya++;
++        if(_input.up) ya--;
++        if(_input.left) xa--;
++        if(_input.right) xa++;
++        if(xa!=0 ||ya!=0)
++        {
++            move(xa*Game.getBomberSpeed(),ya*Game.getBomberSpeed());
++                _moving = true;
++        }else
++        {
++            _moving = false;
++        }
+         // TODO: nhớ cập nhật lại giá trị cờ _moving khi thay đổi trạng thái di chuyển
+     }
+ 
+     @Override
+     public boolean canMove(double x, double y) {
+-        // TODO: kiểm tra có đối tượng tại vị trí chuẩn bị di chuyển đến và có thể di chuyển tới đó hay không
+-        return false;
++        for(int i = 0;i<4;i++)
++        {
++            double xt = ((_x+x) + i%2 *9)/Game.TILES_SIZE;
++            double yt = ((_y+y) + i/2 *12 - 13)/Game.TILES_SIZE;
++            Entity e   = _board.getEntity(xt,yt,this);
++            if(!e.collide(this))
++                return false;
++        }
++        return true;
+     }
+ 
+     @Override
+     public void move(double xa, double ya) {
+         // TODO: sử dụng canMove() để kiểm tra xem có thể di chuyển tới điểm đã tính toán hay không và thực hiện thay đổi tọa độ _x, _y
+         // TODO: nhớ cập nhật giá trị _direction sau khi di chuyển
++        if(ya<0) _direction = 0;
++        if(xa>0) _direction = 1;
++        if(ya>0) _direction = 2;
++        if(xa<0) _direction = 3;
++        if(canMove(0,ya))
++        {
++            _y+=ya;
++        }
++        if(canMove(xa,0))
++        {
++            _x+=xa;
++        }
++
+     }
+ 
+     @Override
+     public boolean collide(Entity e) {
+         // TODO: xử lý va chạm với Flame
++        if(e instanceof Flame){
++            kill();
++            return  false;
++        }
+         // TODO: xử lý va chạm với Enemy
+-
++        if(e instanceof Enemy)
++        {
++            kill();
++            return true;
++        }
+         return true;
+     }
+ 
+Index: src/uet/oop/bomberman/entities/character/enemy/Enemy.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/character/enemy/Enemy.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/character/enemy/Enemy.java	(date 1543509039000)
+@@ -79,6 +79,25 @@
+ 		// TODO: sử dụng canMove() để kiểm tra xem có thể di chuyển tới điểm đã tính toán hay không
+ 		// TODO: sử dụng move() để di chuyển
+ 		// TODO: nhớ cập nhật lại giá trị cờ _moving khi thay đổi trạng thái di chuyển
++	int xa = 0,ya=0;
++	if(_steps<=0)
++	{
++		_direction = _ai.calculateDirection();
++		_steps = MAX_STEPS;
++	}
++	if(_direction == 0) ya--;
++	if(_direction==1) xa++;
++	if(_direction == 2 ) ya++;
++	if(_direction == 3) xa--;
++	if(canMove(xa,ya)){
++		_steps-=1+rest;
++		move(xa*_speed,ya*_speed);
++		_moving = true;
++
++	} else {
++		_steps = 0;
++		_moving = false;
++	}
+ 	}
+ 	
+ 	@Override
+@@ -91,13 +110,37 @@
+ 	@Override
+ 	public boolean canMove(double x, double y) {
+ 		// TODO: kiểm tra có đối tượng tại vị trí chuẩn bị di chuyển đến và có thể di chuyển tới đó hay không
+-		return false;
++		double xr = _x, yr = _y - 16; //subtract y to get more accurate results
++
++		//the thing is, subract 15 to 16 (sprite size), so if we add 1 tile we get the next pixel tile with this
++		//we avoid the shaking inside tiles with the help of steps
++		if(_direction == 0) { yr += _sprite.getSize()-1 ; xr += _sprite.getSize()/2; }
++		if(_direction == 1) {yr += _sprite.getSize()/2; xr += 1;}
++		if(_direction == 2) { xr += _sprite.getSize()/2; yr += 1;}
++		if(_direction == 3) { xr += _sprite.getSize() -1; yr += _sprite.getSize()/2;}
++
++		int xx = Coordinates.pixelToTile(xr) +(int)x;
++		int yy = Coordinates.pixelToTile(yr) +(int)y;
++
++		Entity a = _board.getEntity(xx, yy, this); //entity of the position we want to go
++
++		return a.collide(this);
+ 	}
+ 
+ 	@Override
+ 	public boolean collide(Entity e) {
+ 		// TODO: xử lý va chạm với Flame
++		if(e instanceof Flame)
++		{
++			kill();
++			return false;
++		}
+ 		// TODO: xử lý va chạm với Bomber
++		if(e instanceof Bomber)
++		{
++			((Bomber) e).kill();
++			return true;
++		}
+ 		return true;
+ 	}
+ 	
+Index: src/uet/oop/bomberman/entities/character/enemy/ai/AILow.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/character/enemy/ai/AILow.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/character/enemy/ai/AILow.java	(date 1543509039000)
+@@ -5,7 +5,7 @@
+ 	@Override
+ 	public int calculateDirection() {
+ 		// TODO: cài đặt thuật toán tìm đường đi
+-		return 1;
++		return random.nextInt(5);
+ 	}
+ 
+ }
+Index: src/uet/oop/bomberman/entities/tile/Portal.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/tile/Portal.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/tile/Portal.java	(date 1543509039000)
+@@ -1,18 +1,28 @@
+ package uet.oop.bomberman.entities.tile;
+ 
++import sun.util.resources.cldr.br.CurrencyNames_br;
++import uet.oop.bomberman.Board;
+ import uet.oop.bomberman.entities.Entity;
++import uet.oop.bomberman.entities.character.Bomber;
+ import uet.oop.bomberman.graphics.Sprite;
+ 
+ public class Portal extends Tile {
++	protected Board _board;
++	public Portal(int x, int y, Sprite sprite,Board board) {
+ 
+-	public Portal(int x, int y, Sprite sprite) {
+ 		super(x, y, sprite);
++		_board = board;
+ 	}
+ 	
+ 	@Override
+ 	public boolean collide(Entity e) {
+ 		// TODO: xử lý khi Bomber đi vào
+-		return false;
++		if(e instanceof Bomber)
++		{
++				if(_board.detectNoEnemies())
++					_board.nextLevel();
++		}
++		return true;
+ 	}
+ 
+ }
+Index: src/uet/oop/bomberman/entities/tile/destroyable/Brick.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/tile/destroyable/Brick.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/tile/destroyable/Brick.java	(date 1543509039000)
+@@ -1,6 +1,8 @@
+ package uet.oop.bomberman.entities.tile.destroyable;
+ 
+ 
++import uet.oop.bomberman.entities.Entity;
++import uet.oop.bomberman.entities.bomb.Flame;
+ import uet.oop.bomberman.graphics.Screen;
+ import uet.oop.bomberman.graphics.Sprite;
+ import uet.oop.bomberman.level.Coordinates;
+@@ -29,5 +31,13 @@
+ 		else
+ 			screen.renderEntity( x, y, this);
+ 	}
++	@Override
++	public boolean collide(Entity e)
++	{
++		if(e instanceof Flame)
++			destroy();
++		return false;
++
++	}
+ 	
+ }
+Index: src/uet/oop/bomberman/entities/tile/destroyable/DestroyableTile.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/tile/destroyable/DestroyableTile.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/tile/destroyable/DestroyableTile.java	(date 1543509039000)
+@@ -1,6 +1,7 @@
+ package uet.oop.bomberman.entities.tile.destroyable;
+ 
+ import uet.oop.bomberman.entities.Entity;
++import uet.oop.bomberman.entities.bomb.Flame;
+ import uet.oop.bomberman.entities.tile.Tile;
+ import uet.oop.bomberman.graphics.Sprite;
+ 
+@@ -37,6 +38,8 @@
+ 	@Override
+ 	public boolean collide(Entity e) {
+ 		// TODO: xử lý khi va chạm với Flame
++	if( e instanceof Flame)
++		destroy();
+ 		return false;
+ 	}
+ 	
+Index: src/uet/oop/bomberman/entities/tile/item/BombItem.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/tile/item/BombItem.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/tile/item/BombItem.java	(date 1543509039000)
+@@ -1,6 +1,8 @@
+ package uet.oop.bomberman.entities.tile.item;
+ 
++import uet.oop.bomberman.Game;
+ import uet.oop.bomberman.entities.Entity;
++import uet.oop.bomberman.entities.character.Bomber;
+ import uet.oop.bomberman.graphics.Sprite;
+ 
+ public class BombItem extends Item {
+@@ -12,6 +14,11 @@
+ 	@Override
+ 	public boolean collide(Entity e) {
+ 		// TODO: xử lý Bomber ăn Item
++		if(e instanceof Bomber)
++		{
++            Game.addBombRate(2);
++            remove();
++		}
+ 		return false;
+ 	}
+ 	
+Index: src/uet/oop/bomberman/entities/tile/item/FlameItem.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/tile/item/FlameItem.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/tile/item/FlameItem.java	(date 1543509039000)
+@@ -1,6 +1,8 @@
+ package uet.oop.bomberman.entities.tile.item;
+ 
++import uet.oop.bomberman.Game;
+ import uet.oop.bomberman.entities.Entity;
++import uet.oop.bomberman.entities.character.Bomber;
+ import uet.oop.bomberman.graphics.Sprite;
+ 
+ public class FlameItem extends Item {
+@@ -12,6 +14,11 @@
+ 	@Override
+ 	public boolean collide(Entity e) {
+ 		// TODO: xử lý Bomber ăn Item
++		if(e instanceof Bomber)
++		{
++			Game.addBombRadius(1);
++			remove();
++		}
+ 		return false;
+ 	}
+ 
+Index: src/uet/oop/bomberman/entities/tile/item/SpeedItem.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/uet/oop/bomberman/entities/tile/item/SpeedItem.java	(date 1542130377000)
++++ src/uet/oop/bomberman/entities/tile/item/SpeedItem.java	(date 1543509039000)
+@@ -1,6 +1,8 @@
+ package uet.oop.bomberman.entities.tile.item;
+ 
++import uet.oop.bomberman.Game;
+ import uet.oop.bomberman.entities.Entity;
++import uet.oop.bomberman.entities.character.Bomber;
+ import uet.oop.bomberman.graphics.Sprite;
+ 
+ public class SpeedItem extends Item {
+@@ -12,6 +14,11 @@
+ 	@Override
+ 	public boolean collide(Entity e) {
+ 		// TODO: xử lý Bomber ăn Item
++		if(e instanceof Bomber)
++		{
++			Game.addBomberSpeed(0.2);
++			remove();
++		}
+ 		return false;
+ 	}
+ }

@@ -3,6 +3,7 @@ package uet.oop.bomberman.entities.character;
 import uet.oop.bomberman.Board;
 import uet.oop.bomberman.Game;
 import uet.oop.bomberman.entities.Entity;
+import uet.oop.bomberman.entities.Message;
 import uet.oop.bomberman.entities.bomb.Bomb;
 import uet.oop.bomberman.entities.bomb.Flame;
 import uet.oop.bomberman.entities.character.enemy.Enemy;
@@ -11,6 +12,7 @@ import uet.oop.bomberman.graphics.Sprite;
 import uet.oop.bomberman.input.Keyboard;
 import uet.oop.bomberman.level.Coordinates;
 
+import java.awt.*;
 import java.util.Iterator;
 import java.util.List;
 
@@ -110,13 +112,22 @@ public class Bomber extends Character {
     public void kill() {
         if (!_alive) return;
         _alive = false;
+        _board.addLives(-1);
+        Message msg = new Message("-1 lives",getXMessage(),getYMessage(),2, Color.white,14);
+        _board.addMessage(msg);
     }
 
     @Override
     protected void afterKill() {
         if (_timeAfter > 0) --_timeAfter;
         else {
-            _board.endGame();
+            if(_bombs.size()==0)
+            {
+                if(_board.getLives()==0)
+                    _board.endGame();
+                else _board.restartLevel();
+            }
+
         }
     }
 
@@ -144,7 +155,7 @@ public class Bomber extends Character {
         for(int i = 0;i<4;i++)
         {
             double xt = ((_x+x) + i%2 *9)/Game.TILES_SIZE;
-            double yt = ((_y+y) + i/2 *12 - 13)/Game.TILES_SIZE;
+            double yt = ((_y+y) + i/2 *9  - 13)/Game.TILES_SIZE;
             Entity e   = _board.getEntity(xt,yt,this);
             if(!e.collide(this))
                 return false;
